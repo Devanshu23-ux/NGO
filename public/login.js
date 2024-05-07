@@ -29,7 +29,7 @@ function login() {
     })
     .then(data => {
         alert('Login successful!');
-        window.location.href = 'index.html'; // Redirect on successful login
+        window.location.href = 'index2.html';
     })
     .catch(error => {
         console.log('Error:', error);
