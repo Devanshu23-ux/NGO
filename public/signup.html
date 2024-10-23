@@ -57,7 +57,7 @@
                     <label for="formCheck">Remember Me</label>
                 </div>
                 <div class="input-field">
-                    <input type="submit" class="input-submit" value="SignUp"/>
+                    <input type="submit" id="Singupbtn" class="input-submit" value="SignUp"/>
                 </div>
             </form>
         </div>
@@ -100,7 +100,7 @@
                 }
             })
             .then(data => {
-                alert('Registration successful!');
+ //               alert('Registration successful!');
                 window.location.href = '/login.html'; // Redirect on successful registration
             })
             .catch(error => {

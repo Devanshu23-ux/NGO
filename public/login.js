@@ -4,8 +4,32 @@ document.getElementById("form").addEventListener("submit", (event) => {
 });
 
 function login() {
-    const email = document.getElementById("logEmail").value;
-    const password = document.getElementById("logPassword").value;
+    const emailInput = document.getElementById("logEmail");
+    const passwordInput = document.getElementById("logPassword");
+    const errorElement = document.getElementById("error");
+
+    // Clear previous error messages
+    errorElement.innerHTML = '';
+
+    const email = emailInput.value;
+    const password = passwordInput.value;
+
+    // Simple client-side validation
+    if (!validateEmail(email)) {
+        errorElement.innerHTML = 'Please enter a valid email address.';
+        clearInputFields(); // Set inputs to null
+        return;
+    }
+
+    if (password.length < 6) {
+        errorElement.innerHTML = 'Password must be at least 6 characters long.';
+        clearInputFields(); // Set inputs to null
+        return;
+    }
+
+    // Show loading state (optional)
+    errorElement.innerHTML = 'Logging in...';
+    document.getElementById("loginButton").disabled = true; // Disable button to prevent multiple clicks
 
     // Make a fetch request to your backend
     fetch('/login', {
@@ -28,15 +52,32 @@ function login() {
         }
     })
     .then(data => {
-        alert('Login successful!');
-        window.location.href = 'index2.html';
+        // Log success and redirect
+        window.location.href = 'index.html';
     })
     .catch(error => {
         console.log('Error:', error);
-        document.getElementById("error").innerHTML = error.message || 'Failed to login. Please try again later.';
+        errorElement.innerHTML = error.message || 'Failed to login. Please try again later.';
+        clearInputFields(); // Set inputs to null
+    })
+    .finally(() => {
+        document.getElementById("loginButton").disabled = false; // Re-enable the button after the fetch
     });
 }
 
+// Clear input fields
+function clearInputFields() {
+    document.getElementById("logEmail").value = '';
+    document.getElementById("logPassword").value = '';
+}
+
+// Simple email validation function
+function validateEmail(email) {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(String(email).toLowerCase());
+}
+
+// Login and registration toggle functions
 var x = document.getElementById('login');
 var y = document.getElementById('register');
 var z = document.getElementById('btn');
@@ -55,25 +96,17 @@ function register() {
 
 // Toggle password visibility
 function myLogPassword() {
-    var passwordInput = document.getElementById('logPassword');
-    var eyeIcon = document.getElementById('eye');
-    var eyeSlashIcon = document.getElementById('eye-slash');
-
-    if (passwordInput.type === 'password') {
-        passwordInput.type = 'text';
-        eyeIcon.style.opacity = '0';
-        eyeSlashIcon.style.opacity = '1';
-    } else {
-        passwordInput.type = 'password';
-        eyeIcon.style.opacity = '1';
-        eyeSlashIcon.style.opacity = '0';
-    }
+    togglePasswordVisibility('logPassword', 'eye', 'eye-slash');
 }
 
 function myRegPassword() {
-    var passwordInput = document.getElementById('regPassword');
-    var eyeIcon = document.getElementById('eye-2');
-    var eyeSlashIcon = document.getElementById('eye-slash-2');
+    togglePasswordVisibility('regPassword', 'eye-2', 'eye-slash-2');
+}
+
+function togglePasswordVisibility(inputId, eyeIconId, eyeSlashIconId) {
+    var passwordInput = document.getElementById(inputId);
+    var eyeIcon = document.getElementById(eyeIconId);
+    var eyeSlashIcon = document.getElementById(eyeSlashIconId);
 
     if (passwordInput.type === 'password') {
         passwordInput.type = 'text';

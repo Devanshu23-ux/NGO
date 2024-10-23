@@ -1,135 +1,132 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="login.css" />
     <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-      integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw=="
-      crossorigin="anonymous"
-      referrerpolicy="no-referrer"
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw=="
+        crossorigin="anonymous"
+        referrerpolicy="no-referrer"
     />
-    <title>login Page</title>
-  </head>
-  <body style="background-color: #088F8F;">
+    <title>Login Page</title>
+</head>
+<body style="background-color: #088F8F;">
     <div class="container">
-      <div class="box">
-        <!------------------ Login Box --------------------->
-        <div class="box-login" id="login">
-          <div class="top-header">
-            <h3>enGEO</h3>
-            <small>Welcome Backkkkkk!</small>
-          </div>
-          <form class="input-group" id="form" onsubmit="login()">
-            <div class="input-field">
-              <input type="text" class="input-box" id="logEmail" required />
-              <label for="logEmail">Email address</label>
-            </div>
-            <div class="input-field">
-              <input
-                type="password"
-                class="input-box"
-                id="logPassword"
-                required
-              />
-              <label for="logPassword">Password</label>
-              <div class="eye-area">
-                <div class="eye-box" onclick="myLogPassword()">
-                  <i class="fa-regular fa-eye" id="eye"></i>
-                  <i class="fa-regular fa-eye-slash" id="eye-slash"></i>
+        <div class="box">
+            <!------------------ Login Box ---------------------> 
+            <div class="box-login" id="login">
+                <div class="top-header">
+                    <h3>enGEO</h3>
+                    <small>Welcome Back!</small>
                 </div>
-              </div>
+                <form class="input-group" id="form">
+                    <div class="input-field">
+                        <input type="text" class="input-box" id="logEmail" required data-testid="login-email" />
+                        <label for="logEmail">Email address</label>
+                    </div>
+                    <div class="input-field">
+                        <input
+                            type="password"
+                            class="input-box"
+                            id="logPassword"
+                            required data-testid="login-password"
+                        />
+                        <label for="logPassword">Password</label>
+                        <div class="eye-area">
+                            <div class="eye-box" onclick="myLogPassword()" data-testid="toggle-password-visibility">
+                                <i class="fa-regular fa-eye" id="eye"></i>
+                                <i class="fa-regular fa-eye-slash" id="eye-slash"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="remember">
+                        <input type="checkbox" id="formCheck" class="check" />
+                        <label for="formCheck"> Remember Me</label>
+                    </div>
+                    <div class="signindir">
+                        <a href="http://localhost:3200/signup.html">Create new</a>
+                    </div>
+                    <div class="input-field">
+                        <input type="submit" id="loginButton" class="input-submit" value="Log In" data-testid="login-submit" />
+                    </div>
+                </form>
+                <div id="error" style="color: red;"></div> <!-- Error message display -->
             </div>
-            <div class="remember">
-              <input type="checkbox" id="formCheck" class="check" />
-              <label for="formCheck"> Remember Me</label>
-            </div>
-            <div class="signindir">
-              <a href="http://localhost:3200/signup.html">Create new</a>
-            </div>
-            <div class="input-field">
-              <input type="submit" class="input-submit" value="Log In" />
-            </div>
-          </form>
-        </div>
-        <!-------------------- Register --------------------------->
-
-        <div class="box-register" id="register">
-          <div class="top-header">
-            <h3>Sign Up, Now</h3>
-            <small>We are happy to have you with us.</small>
-          </div>
-          <form class="input-group" id="signin-form" onsubmit="signin()">
-            <div class="input-field">
-              <input type="text" class="input-box" id="regEmail" required />
-              <label for="regEmail">Email address</label>
-            </div>
-            <div class="input-field">
-              <input
-                type="password"
-                class="input-box"
-                id="regPassword"
-                required
-              />
-              <label for="regPassword">Password</label>
-              <div class="eye-area">
-                <div class="eye-box" onclick="myRegPassword()">
-                  <i class="fa-regular fa-eye" id="eye-2"></i>
-                  <i class="fa-regular fa-eye-slash" id="eye-slash-2"></i>
+            <!-------------------- Register -------------------------> 
+            <div class="box-register" id="register">
+                <div class="top-header">
+                    <h3>Sign Up, Now</h3>
+                    <small>We are happy to have you with us.</small>
                 </div>
-              </div>
+                <form class="input-group" id="signin-form" onsubmit="signin()">
+                    <div class="input-field">
+                        <input type="text" class="input-box" id="regEmail" required data-testid="register-email" />
+                        <label for="regEmail">Email address</label>
+                    </div>
+                    <div class="input-field">
+                        <input
+                            type="password"
+                            class="input-box"
+                            id="regPassword"
+                            required data-testid="register-password"
+                        />
+                        <label for="regPassword">Password</label>
+                        <div class="eye-area">
+                            <div class="eye-box" onclick="myRegPassword()" data-testid="toggle-reg-password-visibility">
+                                <i class="fa-regular fa-eye" id="eye-2"></i>
+                                <i class="fa-regular fa-eye-slash" id="eye-slash-2"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="remember">
+                        <input type="checkbox" id="formCheck-2" class="check" />
+                        <label for="formCheck-2"> Remember Me</label>
+                    </div>
+                    <div class="input-field">
+                        <input type="submit" class="input-submit" value="Sign In" data-testid="register-submit" />
+                    </div>
+                </form>
             </div>
-            <div class="remember">
-              <input type="checkbox" id="formCheck-2" class="check" />
-              <label for="formCheck-2"> Remember Me</label>
-            </div>
-
-            <div class="input-field">
-              <input type="submit" class="input-submit" value="Sign In" />
-            </div>
-          </form>
+            <!------------------------ Switch -------------------------> 
         </div>
-        <!------------------------ Switch -------------------------->
-
-        
-      </div>
     </div>
     <script>
-      function myLogPassword() {
-        var input = document.getElementById("logPassword");
-        var eye = document.getElementById("eye");
-        var eyeSlash = document.getElementById("eye-slash");
-        
-        if (input.type === "password") {
-          input.type = "text";
-          eye.style.display = "none";
-          eyeSlash.style.display = "block";
-        } else {
-          input.type = "password";
-          eye.style.display = "block";
-          eyeSlash.style.display = "none";
+        function myLogPassword() {
+            var input = document.getElementById("logPassword");
+            var eye = document.getElementById("eye");
+            var eyeSlash = document.getElementById("eye-slash");
+            
+            if (input.type === "password") {
+                input.type = "text";
+                eye.style.display = "none";
+                eyeSlash.style.display = "block";
+            } else {
+                input.type = "password";
+                eye.style.display = "block";
+                eyeSlash.style.display = "none";
+            }
         }
-      }
-      
-      function myRegPassword() {
-        var input = document.getElementById("regPassword");
-        var eye = document.getElementById("eye-2");
-        var eyeSlash = document.getElementById("eye-slash-2");
-        
-        if (input.type === "password") {
-          input.type = "text";
-          eye.style.display = "none";
-          eyeSlash.style.display = "block";
-        } else {
-          input.type = "password";
-          eye.style.display = "block";
-          eyeSlash.style.display = "none";
+
+        function myRegPassword() {
+            var input = document.getElementById("regPassword");
+            var eye = document.getElementById("eye-2");
+            var eyeSlash = document.getElementById("eye-slash-2");
+            
+            if (input.type === "password") {
+                input.type = "text";
+                eye.style.display = "none";
+                eyeSlash.style.display = "block";
+            } else {
+                input.type = "password";
+                eye.style.display = "block";
+                eyeSlash.style.display = "none";
+            }
         }
-      }
-      </script>
-      <script src="login.js"></script>
-  </body>
+    </script>
+    <script src="login.js"></script>
+</body>
 </html>
