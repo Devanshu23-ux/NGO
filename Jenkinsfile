@@ -23,91 +23,47 @@ spec:
     tty: true
     securityContext:
       runAsUser: 0
+      readOnlyRootFilesystem: false
     env:
-      - name: KUBECONFIG
-        value: /kube/config
+    - name: KUBECONFIG
+      value: /kube/config
     volumeMounts:
-      - name: kubeconfig-secret
-        mountPath: /kube/config
-        subPath: kubeconfig
+    - name: kubeconfig-secret
+      mountPath: /kube/config
+      subPath: kubeconfig
 
   - name: dind
-    image: docker:24.0.6-dind
+    image: docker:dind
+    args: ["--storage-driver=overlay2", "--insecure-registry=nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085"]
     securityContext:
       privileged: true
-    tty: true
-    args:
-      - "--host=tcp://0.0.0.0:2375"
-      - "--insecure-registry=nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085"
     env:
-      - name: DOCKER_TLS_CERTDIR
-        value: ""
-    volumeMounts:
-      - name: docker-graph-storage
-        mountPath: /var/lib/docker
-      - name: docker-daemon-config
-        mountPath: /etc/docker/daemon.json
-        subPath: daemon.json
+    - name: DOCKER_TLS_CERTDIR
+      value: ""
 
   volumes:
-    - name: kubeconfig-secret
-      secret:
-        secretName: kubeconfig-secret
-
-    - name: docker-graph-storage
-      emptyDir: {}
-
-    - name: docker-daemon-config
-      configMap:
-        name: docker-daemon-config
+  - name: kubeconfig-secret
+    secret:
+      secretName: kubeconfig-secret
 '''
         }
     }
 
     stages {
 
+        stage('Checkout') {
+            steps {
+                git url:'https://github.com/VaibhaviBhosale/NGO.git',branch:'main'
+            }
+        }
+
         stage('Prepare NGO Website') {
             steps {
                 container('node') {
                     sh '''
-                        echo "Static NGO Website"
+                        echo "NGO website – static HTML/CSS site"
+                        echo "Listing project files..."
                         ls -la
-                    '''
-                }
-            }
-        }
-
-        stage('Debug Workspace') {
-            steps {
-                container('node') {
-                    sh '''
-                        echo "=== WORKSPACE PATH ==="
-                        echo $WORKSPACE
-                        echo "=== FILES ==="
-                        ls -la
-                        echo "=== DOCKERFILE ==="
-                        sed -n '1,50p' Dockerfile || echo "Dockerfile missing!"
-                    '''
-                }
-            }
-        }
-
-        stage('Prepare Base Image in Nexus') {
-            steps {
-                container('dind') {
-                    sh '''
-                        export DOCKER_HOST=tcp://localhost:2375
-
-                        echo "Checking nginx:alpine in Nexus..."
-                        if docker pull nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401075_ngo/nginx:alpine; then
-                            echo "Found!"
-                        else
-                            echo "Not found. Uploading..."
-                            docker login nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085 -u admin -p Changeme@2025
-                            docker pull nginx:alpine
-                            docker tag nginx:alpine nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401075_ngo/nginx:alpine
-                            docker push nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401075_ngo/nginx:alpine
-                        fi
                     '''
                 }
             }
@@ -117,7 +73,8 @@ spec:
             steps {
                 container('dind') {
                     sh '''
-                        export DOCKER_HOST=tcp://localhost:2375
+                        sleep 10
+                        echo "=== Building NGO Docker Image ==="
                         docker build -t ngo:latest .
                     '''
                 }
@@ -129,7 +86,7 @@ spec:
                 container('sonar-scanner') {
                     sh '''
                         sonar-scanner \
-                          -Dsonar.projectKey=2401075-NGO \
+                          -Dsonar.projectKey=2401018-NGO \
                           -Dsonar.sources=. \
                           -Dsonar.host.url=http://my-sonarqube-sonarqube.sonarqube.svc.cluster.local:9000 \
                           -Dsonar.login=sqp_08597ce2ed0908d3a22170c3d5269ac22d8d7fcd
@@ -142,8 +99,9 @@ spec:
             steps {
                 container('dind') {
                     sh '''
-                        export DOCKER_HOST=tcp://localhost:2375
-                        docker login nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085 -u admin -p Changeme@2025
+                        echo "Logging in to Nexus Docker Registry..."
+                        docker login nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085 \
+                          -u student -p Imcc@2025
                     '''
                 }
             }
@@ -153,9 +111,11 @@ spec:
             steps {
                 container('dind') {
                     sh '''
-                        export DOCKER_HOST=tcp://localhost:2375
-                        docker tag ngo:latest nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401075_ngo/ngo:v1
-                        docker push nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401075_ngo/ngo:v1
+                        echo "Tagging NGO image..."
+                        docker tag ngo:latest nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401018_NGO/ngo:v1
+
+                        echo "Pushing NGO image to Nexus..."
+                        docker push nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401018_NGO/ngo:v1
                     '''
                 }
             }
@@ -165,7 +125,9 @@ spec:
             steps {
                 container('kubectl') {
                     sh '''
-                        kubectl create namespace 2401075 || echo "Namespace exists"
+                        echo "Creating namespace 2401018 if not exists..."
+                        kubectl create namespace 2401018 || echo "Namespace already exists"
+                        kubectl get ns
                     '''
                 }
             }
@@ -175,9 +137,16 @@ spec:
             steps {
                 container('kubectl') {
                     sh '''
-                        kubectl apply -f k8s/deployment.yaml -n 2401075
-                        kubectl apply -f k8s/service.yaml -n 2401075
-                        kubectl rollout status deployment/engo-connect-deployment -n 2401075
+                        echo "Applying NGO Kubernetes Deployment & Service..."
+
+                        kubectl apply -f k8s/deployment.yaml -n 2401018
+                        kubectl apply -f k8s/service.yaml -n 2401018
+
+                        echo "Checking all resources..."
+                        kubectl get all -n 2401018
+
+                        echo "Waiting for rollout..."
+                        kubectl rollout status deployment/engo-connect-deployment -n 2401018
                     '''
                 }
             }
@@ -187,8 +156,11 @@ spec:
             steps {
                 container('kubectl') {
                     sh '''
-                        kubectl get pods -n 2401075
-                        kubectl describe pods -n 2401075 | head -n 200
+                        echo "[DEBUG] Listing Pods..."
+                        kubectl get pods -n 2401018
+
+                        echo "[DEBUG] Describe Pods..."
+                        kubectl describe pods -n 2401018 | head -n 200
                     '''
                 }
             }
