@@ -53,7 +53,7 @@ spec:
 
         stage('Checkout') {
             steps {
-                git url:'https://github.com/VaibhaviBhosale/NGO.git',branch:'main'
+                git url:'https://github.com/Devanshu23-ux/NGO.git',branch:'main'
             }
         }
 
@@ -86,7 +86,7 @@ spec:
                 container('sonar-scanner') {
                     sh '''
                         sonar-scanner \
-                          -Dsonar.projectKey=2401018-NGO \
+                          -Dsonar.projectKey=2401075-IntroConnect \
                           -Dsonar.sources=. \
                           -Dsonar.host.url=http://my-sonarqube-sonarqube.sonarqube.svc.cluster.local:9000 \
                           -Dsonar.login=sqp_08597ce2ed0908d3a22170c3d5269ac22d8d7fcd
@@ -112,10 +112,10 @@ spec:
                 container('dind') {
                     sh '''
                         echo "Tagging NGO image..."
-                        docker tag ngo:latest nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401018_NGO/ngo:v1
+                        docker tag ngo:latest nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401075_ngo/ngo:v1
 
                         echo "Pushing NGO image to Nexus..."
-                        docker push nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401018_NGO/ngo:v1
+                        docker push nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401075_ngo/ngo:v1
                     '''
                 }
             }
@@ -125,8 +125,8 @@ spec:
             steps {
                 container('kubectl') {
                     sh '''
-                        echo "Creating namespace 2401018 if not exists..."
-                        kubectl create namespace 2401018 || echo "Namespace already exists"
+                        echo "Creating namespace 2401075 if not exists..."
+                        kubectl create namespace 2401075 || echo "Namespace already exists"
                         kubectl get ns
                     '''
                 }
@@ -139,11 +139,11 @@ spec:
                     sh '''
                         echo "Applying NGO Kubernetes Deployment & Service..."
 
-                        kubectl apply -f k8s/deployment.yaml -n 2401018
-                        kubectl apply -f k8s/service.yaml -n 2401018
+                        kubectl apply -f k8s/deployment.yaml -n 2401075
+                        kubectl apply -f k8s/service.yaml -n 2401075
 
                         echo "Checking all resources..."
-                        kubectl get all -n 2401018
+                        kubectl get all -n 2401075
 
                         echo "Waiting for rollout..."
                         kubectl rollout status deployment/engo-connect-deployment -n 2401018
@@ -157,10 +157,10 @@ spec:
                 container('kubectl') {
                     sh '''
                         echo "[DEBUG] Listing Pods..."
-                        kubectl get pods -n 2401018
+                        kubectl get pods -n 2401075
 
                         echo "[DEBUG] Describe Pods..."
-                        kubectl describe pods -n 2401018 | head -n 200
+                        kubectl describe pods -n 2401075 | head -n 200
                     '''
                 }
             }
