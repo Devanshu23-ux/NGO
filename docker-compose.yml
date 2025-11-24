@@ -1,0 +1,9 @@
+services:
+  frontend:
+    container_name: engo-frontend
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+    restart: unless-stopped

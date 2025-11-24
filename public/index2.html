@@ -97,9 +97,7 @@
           <li><a class="nav-link scrollto" href="#about">About</a></li>
           <li><a class="nav-link scrollto" href="#services">SDGs</a></li>
           <li><a class="nav-link scrollto" href="#team">Team</a></li>
-          <li><a class="nav-link scrollto" href="#contact">Contact</a></li>
           <li><a class="nav-link   scrollto" href="donate.html">Donate</a></li>
-          <li><a class="getstarted scrollto" href="http://localhost:5000/createpost.html">Create Post</a></li>
         </ul>
         <i class="bi bi-list mobile-nav-toggle"></i>
       </nav>
@@ -598,7 +596,7 @@
           </div>
 
           <div class="col-lg-7 mt-5 mt-lg-0 d-flex align-items-stretch" style="margin: 10px 270px;">
-            <form action="forms/contact.php" method="post" role="form" class="php-email-form">
+            <form action="#" method="post" role="form" onsubmit="handleContactSubmit(event)">
               <div class="row">
                 <div class="form-group col-md-6">
                   <label for="name">Your Name</label>
@@ -707,10 +705,25 @@
   <script src="assets/vendor/isotope-layout/isotope.pkgd.min.js"></script>
   <script src="assets/vendor/swiper/swiper-bundle.min.js"></script>
   <script src="assets/vendor/waypoints/noframework.waypoints.js"></script>
-  <script src="assets/vendor/php-email-form/validate.js"></script>
-
-  
   <script src="assets/js/main.js"></script>
+
+  <script>
+    function handleContactSubmit(event) {
+      event.preventDefault();
+      const form = event.target;
+      const loading = form.querySelector('.loading');
+      const err = form.querySelector('.error-message');
+      const sent = form.querySelector('.sent-message');
+      if (err) { err.classList.remove('d-block'); err.textContent = ''; }
+      if (loading) { loading.classList.add('d-block'); }
+      // Simulate async submit
+      setTimeout(() => {
+        if (loading) { loading.classList.remove('d-block'); }
+        if (sent) { sent.classList.add('d-block'); }
+        form.reset();
+      }, 400);
+    }
+  </script>
 
 </body>
 

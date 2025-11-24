@@ -1,0 +1,6 @@
+projectKey=2401075-IntroConnect
+serverUrl=http://sonarqube.imcc.com
+serverVersion=25.1.0.102122
+dashboardUrl=http://sonarqube.imcc.com/dashboard?id=2401075-IntroConnect
+ceTaskId=5351e6da-4cab-4aed-a79c-bf08ae66bca2
+ceTaskUrl=http://sonarqube.imcc.com/api/ce/task?id=5351e6da-4cab-4aed-a79c-bf08ae66bca2

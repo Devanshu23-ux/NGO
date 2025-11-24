@@ -8,7 +8,7 @@
     <link
         rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-        integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw=="
+        integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw=="
         crossorigin="anonymous"
         referrerpolicy="no-referrer"
     />
@@ -78,35 +78,21 @@
         } else {
             passwordError.innerText = ""; // Clear error message if passwords match
 
-            // Perform the fetch to the backend
-            fetch('/signup', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    username: username,
-                    email: email,
-                    password: password,
-                }),
-            })
-            .then(response => {
-                if (response.ok) { // Check if HTTP status code is 200-299
-                    return response.json();
-                } else {
-                    return response.json().then(data => {
-                        throw new Error(data.message || 'Failed to register');
-                    });
+            // Frontend-only signup using localStorage
+            try {
+                const users = JSON.parse(localStorage.getItem('users') || '[]');
+                const exists = users.some(u => u.email === email);
+                if (exists) {
+                    throw new Error('Email address is already registered');
                 }
-            })
-            .then(data => {
- //               alert('Registration successful!');
-                window.location.href = '/login.html'; // Redirect on successful registration
-            })
-            .catch(error => {
+                users.push({ username, email, password });
+                localStorage.setItem('users', JSON.stringify(users));
+                // Redirect to login page
+                window.location.href = 'login.html';
+            } catch (error) {
                 console.log('Error:', error);
                 passwordError.innerText = error.message || 'Failed to register. Please try again later.';
-            });
+            }
         }
     }
 

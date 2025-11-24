@@ -31,38 +31,26 @@ function login() {
     errorElement.innerHTML = 'Logging in...';
     document.getElementById("loginButton").disabled = true; // Disable button to prevent multiple clicks
 
-    // Make a fetch request to your backend
-    fetch('/login', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            email: email,
-            password: password,
-        }),
-    })
-    .then(response => {
-        if (response.ok) {
-            return response.json();
-        } else {
-            return response.json().then(data => {
-                throw new Error(data.message || 'Failed to login');
-            });
+    // Static frontend-only login using localStorage
+    try {
+        const users = JSON.parse(localStorage.getItem('users') || '[]');
+        const user = users.find(u => u.email === email);
+        if (!user) {
+            throw new Error('User not found. Please sign up first.');
         }
-    })
-    .then(data => {
-        // Log success and redirect
+        if (user.password !== password) {
+            throw new Error('Invalid password.');
+        }
+        // Optionally store current user session
+        localStorage.setItem('currentUser', JSON.stringify({ email: user.email, username: user.username }));
         window.location.href = 'index.html';
-    })
-    .catch(error => {
+    } catch (error) {
         console.log('Error:', error);
         errorElement.innerHTML = error.message || 'Failed to login. Please try again later.';
-        clearInputFields(); // Set inputs to null
-    })
-    .finally(() => {
-        document.getElementById("loginButton").disabled = false; // Re-enable the button after the fetch
-    });
+        clearInputFields();
+    } finally {
+        document.getElementById("loginButton").disabled = false;
+    }
 }
 
 // Clear input fields

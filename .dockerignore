@@ -1,0 +1,13 @@
+.git
+.gitignore
+node_modules
+screenshots
+.vscode
+*.log
+Dockerfile
+README.md
+tempCodeRunnerFile.js
+appmongo.js
+appsql.js
+server.js
+public/db.env
