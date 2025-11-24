@@ -57,32 +57,6 @@ spec:
             }
         }
 
-        /* ----------------------------------------------------
-           FIX → Upload nginx:alpine base image to Nexus
-           ---------------------------------------------------- */
-        stage('Upload Base NGINX Image to Nexus') {
-            steps {
-                container('dind') {
-                    sh '''
-                        echo "Checking if nginx:alpine exists in Nexus..."
-
-                        if docker pull nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401075_ngo/nginx:alpine; then
-                            echo "Base image already exists in Nexus."
-                        else
-                            echo "Uploading nginx:alpine to Nexus..."
-                            docker pull nginx:alpine
-                            docker tag nginx:alpine nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401075_ngo/nginx:alpine
-
-                            docker login nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085 \
-                              -u student -p Imcc@2025
-
-                            docker push nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401075_ngo/nginx:alpine
-                        fi
-                    '''
-                }
-            }
-        }
-
         stage('Prepare NGO Website') {
             steps {
                 container('node') {
@@ -114,7 +88,7 @@ spec:
                         sonar-scanner \
                           -Dsonar.projectKey=2401075-IntroConnect \
                           -Dsonar.sources=. \
-                          -Dsonar.host.url=https://sonarqube.imcc.com \
+                          -Dsonar.host.url=https://sonarqube.imcc.com
                           -Dsonar.login=sqp_08597ce2ed0908d3a22170c3d5269ac22d8d7fcd
                     '''
                 }
