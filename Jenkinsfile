@@ -6,24 +6,19 @@ apiVersion: v1
 kind: Pod
 spec:
 
-  # =============================
-  #         CONTAINERS
-  # =============================
+  // ===== CONTAINERS =====
   containers:
 
-  # Node container
   - name: node
     image: node:18
     command: ['cat']
     tty: true
 
-  # Sonar Scanner
   - name: sonar-scanner
     image: sonarsource/sonar-scanner-cli
     command: ['cat']
     tty: true
 
-  # Kubectl container
   - name: kubectl
     image: bitnami/kubectl:latest
     command: ['cat']
@@ -31,16 +26,14 @@ spec:
     securityContext:
       runAsUser: 0
     env:
-    - name: KUBECONFIG
-      value: /kube/config
+      - name: KUBECONFIG
+        value: /kube/config
     volumeMounts:
-    - name: kubeconfig-secret
-      mountPath: /kube/config
-      subPath: kubeconfig
+      - name: kubeconfig-secret
+        mountPath: /kube/config
+        subPath: kubeconfig
 
-  # =============================
-  #   Docker-in-Docker (DinD)
-  # =============================
+  // Docker-in-Docker
   - name: dind
     image: docker:24.0.6-dind
     securityContext:
@@ -58,20 +51,18 @@ spec:
         mountPath: /etc/docker/daemon.json
         subPath: daemon.json
 
-  # =============================
-  #         VOLUMES
-  # =============================
+  // ===== VOLUMES =====
   volumes:
-  - name: kubeconfig-secret
-    secret:
-      secretName: kubeconfig-secret
+    - name: kubeconfig-secret
+      secret:
+        secretName: kubeconfig-secret
 
-  - name: docker-graph-storage
-    emptyDir: {}
+    - name: docker-graph-storage
+      emptyDir: {}
 
-  - name: docker-daemon-config
-    configMap:
-      name: docker-daemon-config
+    - name: docker-daemon-config
+      configMap:
+        name: docker-daemon-config
 
 '''
         }
@@ -79,10 +70,6 @@ spec:
 
     stages {
 
-
-        # =============================
-        #      PREPARE WEBSITE
-        # =============================
         stage('Prepare NGO Website') {
             steps {
                 container('node') {
@@ -94,10 +81,6 @@ spec:
             }
         }
 
-
-        # =============================
-        #        DEBUG WORKSPACE
-        # =============================
         stage('Debug Workspace') {
             steps {
                 container('node') {
@@ -113,10 +96,6 @@ spec:
             }
         }
 
-
-        # =============================
-        #  PREPARE BASE IMAGE IN NEXUS
-        # =============================
         stage('Prepare Base Image in Nexus') {
             steps {
                 container('dind') {
@@ -138,26 +117,17 @@ spec:
             }
         }
 
-
-        # =============================
-        #         DOCKER BUILD
-        # =============================
         stage('Build Docker Image') {
             steps {
                 container('dind') {
                     sh '''
                         export DOCKER_HOST=tcp://localhost:2375
-                        echo "=== Building NGO Docker Image ==="
                         docker build -t ngo:latest .
                     '''
                 }
             }
         }
 
-
-        # =============================
-        #      SONARQUBE ANALYSIS
-        # =============================
         stage('SonarQube Analysis') {
             steps {
                 container('sonar-scanner') {
@@ -172,26 +142,17 @@ spec:
             }
         }
 
-
-        # =============================
-        #    LOGIN TO NEXUS DOCKER
-        # =============================
         stage('Login to Nexus Registry') {
             steps {
                 container('dind') {
                     sh '''
                         export DOCKER_HOST=tcp://localhost:2375
-                        docker login nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085 \
-                          -u admin -p Changeme@2025
+                        docker login nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085 -u admin -p Changeme@2025
                     '''
                 }
             }
         }
 
-
-        # =============================
-        #    PUSH NGO IMAGE TO NEXUS
-        # =============================
         stage('Push NGO Image to Nexus') {
             steps {
                 container('dind') {
@@ -204,10 +165,6 @@ spec:
             }
         }
 
-
-        # =============================
-        #     CREATE K8s NAMESPACE
-        # =============================
         stage('Create Namespace') {
             steps {
                 container('kubectl') {
@@ -218,10 +175,6 @@ spec:
             }
         }
 
-
-        # =============================
-        #     DEPLOY TO KUBERNETES
-        # =============================
         stage('Deploy to Kubernetes') {
             steps {
                 container('kubectl') {
@@ -234,10 +187,6 @@ spec:
             }
         }
 
-
-        # =============================
-        #     DEBUG PODS
-        # =============================
         stage('Debug Pods') {
             steps {
                 container('kubectl') {
@@ -248,6 +197,5 @@ spec:
                 }
             }
         }
-
     }
 }
