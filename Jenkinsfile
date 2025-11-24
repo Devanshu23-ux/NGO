@@ -7,23 +7,25 @@ kind: Pod
 spec:
   containers:
 
+  # Node container
   - name: node
     image: node:18
     command: ['cat']
     tty: true
 
+  # Sonar Scanner container
   - name: sonar-scanner
     image: sonarsource/sonar-scanner-cli
     command: ['cat']
     tty: true
 
+  # Kubectl container
   - name: kubectl
     image: bitnami/kubectl:latest
     command: ['cat']
     tty: true
     securityContext:
       runAsUser: 0
-      readOnlyRootFilesystem: false
     env:
     - name: KUBECONFIG
       value: /kube/config
@@ -32,42 +34,47 @@ spec:
       mountPath: /kube/config
       subPath: kubeconfig
 
+  # Docker-in-Docker with proper registry + daemon config
   - name: dind
-    image: docker:dind
-    args: ["--storage-driver=overlay2", "--insecure-registry=nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085"]
+    image: docker:24.0.6-dind
     securityContext:
       privileged: true
+    tty: true
+    args:
+      - "--host=tcp://0.0.0.0:2375"
+      - "--insecure-registry=nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085"
     env:
-    - name: DOCKER_TLS_CERTDIR
-      value: ""
+      - name: DOCKER_TLS_CERTDIR
+        value: ""
+    volumeMounts:
+      - name: docker-graph-storage
+        mountPath: /var/lib/docker
 
   volumes:
   - name: kubeconfig-secret
     secret:
       secretName: kubeconfig-secret
+
+  - name: docker-graph-storage
+    emptyDir: {}
+
 '''
         }
     }
 
     stages {
 
-        /* -------------------------
-           STATIC WEBSITE STEP
-           ------------------------- */
         stage('Prepare NGO Website') {
             steps {
                 container('node') {
                     sh '''
-                        echo "NGO website – static HTML/CSS site"
+                        echo "Static NGO Website"
                         ls -la
                     '''
                 }
             }
         }
 
-        /* -------------------------
-           DEBUG WORKSPACE
-           ------------------------- */
         stage('Debug Workspace') {
             steps {
                 container('node') {
@@ -75,47 +82,43 @@ spec:
                         echo "=== WORKSPACE PATH ==="
                         echo $WORKSPACE
 
-                        echo "=== LIST FILES ==="
+                        echo "=== FILES ==="
                         ls -la
 
-                        echo "=== DOCKERFILE CONTENT ==="
+                        echo "=== DOCKERFILE ==="
                         sed -n '1,50p' Dockerfile || echo "Dockerfile not found!"
                     '''
                 }
             }
         }
 
-        /* -------------------------
-           PREPARE BASE IMAGE IN NEXUS
-           ------------------------- */
         stage('Prepare Base Image in Nexus') {
             steps {
                 container('dind') {
                     sh '''
-                        set -e
-                        echo "Checking base image in Nexus: 2401075_ngo/nginx:alpine"
+                        export DOCKER_HOST=tcp://localhost:2375
+
+                        echo "Checking nginx:alpine in Nexus..."
                         if docker pull nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401075_ngo/nginx:alpine; then
-                            echo "Base image found in Nexus."
+                          echo "Found in Nexus"
                         else
-                            echo "Base image missing. Uploading nginx:alpine to Nexus..."
-                            docker login nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085 -u admin -p Changeme@2025
-                            docker pull nginx:alpine
-                            docker tag nginx:alpine nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401075_ngo/nginx:alpine
-                            docker push nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401075_ngo/nginx:alpine
+                          echo "Not found — pushing from Docker Hub..."
+                          docker login nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085 -u admin -p Changeme@2025
+                          docker pull nginx:alpine
+                          docker tag nginx:alpine nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401075_ngo/nginx:alpine
+                          docker push nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401075_ngo/nginx:alpine
                         fi
                     '''
                 }
             }
         }
 
-        /* -------------------------
-           DOCKER BUILD
-           ------------------------- */
         stage('Build Docker Image') {
             steps {
                 container('dind') {
                     sh '''
-                        sleep 10
+                        export DOCKER_HOST=tcp://localhost:2375
+
                         echo "=== Building NGO Docker Image ==="
                         docker build -t ngo:latest .
                     '''
@@ -123,30 +126,25 @@ spec:
             }
         }
 
-        /* -------------------------
-           SONARQUBE ANALYSIS
-           ------------------------- */
         stage('SonarQube Analysis') {
             steps {
                 container('sonar-scanner') {
                     sh '''
                         sonar-scanner \
-                          -Dsonar.projectKey=2401075-NGO \
-                          -Dsonar.sources=. \
-                          -Dsonar.host.url=http://my-sonarqube-sonarqube.sonarqube.svc.cluster.local:9000 \
-                          -Dsonar.login=sqp_08597ce2ed0908d3a22170c3d5269ac22d8d7fcd
+                            -Dsonar.projectKey=2401075-NGO \
+                            -Dsonar.sources=. \
+                            -Dsonar.host.url=http://my-sonarqube-sonarqube.sonarqube.svc.cluster.local:9000 \
+                            -Dsonar.login=sqp_08597ce2ed0908d3a22170c3d5269ac22d8d7fcd
                     '''
                 }
             }
         }
 
-        /* -------------------------
-           DOCKER LOGIN TO NEXUS
-           ------------------------- */
         stage('Login to Nexus Registry') {
             steps {
                 container('dind') {
                     sh '''
+                        export DOCKER_HOST=tcp://localhost:2375
                         docker login nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085 \
                             -u admin -p Changeme@2025
                     '''
@@ -154,13 +152,12 @@ spec:
             }
         }
 
-        /* -------------------------
-           PUSH IMAGE TO NEXUS
-           ------------------------- */
         stage('Push NGO Image to Nexus') {
             steps {
                 container('dind') {
                     sh '''
+                        export DOCKER_HOST=tcp://localhost:2375
+
                         docker tag ngo:latest nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401075_ngo/ngo:v1
                         docker push nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401075_ngo/ngo:v1
                     '''
@@ -168,22 +165,16 @@ spec:
             }
         }
 
-        /* -------------------------
-           CREATE NAMESPACE
-           ------------------------- */
         stage('Create Namespace') {
             steps {
                 container('kubectl') {
                     sh '''
-                        kubectl create namespace 2401075 || echo "Namespace already exists"
+                        kubectl create namespace 2401075 || echo "Namespace exists"
                     '''
                 }
             }
         }
 
-        /* -------------------------
-           DEPLOY TO KUBERNETES
-           ------------------------- */
         stage('Deploy to Kubernetes') {
             steps {
                 container('kubectl') {
@@ -191,17 +182,12 @@ spec:
                         kubectl apply -f k8s/deployment.yaml -n 2401075
                         kubectl apply -f k8s/service.yaml -n 2401075
 
-                        kubectl get all -n 2401075
-
                         kubectl rollout status deployment/engo-connect-deployment -n 2401075
                     '''
                 }
             }
         }
 
-        /* -------------------------
-           DEBUG
-           ------------------------- */
         stage('Debug Pods') {
             steps {
                 container('kubectl') {
