@@ -5,8 +5,6 @@ pipeline {
 apiVersion: v1
 kind: Pod
 spec:
-
-  // ===== CONTAINERS =====
   containers:
 
   - name: node
@@ -33,7 +31,6 @@ spec:
         mountPath: /kube/config
         subPath: kubeconfig
 
-  // Docker-in-Docker
   - name: dind
     image: docker:24.0.6-dind
     securityContext:
@@ -41,6 +38,7 @@ spec:
     tty: true
     args:
       - "--host=tcp://0.0.0.0:2375"
+      - "--insecure-registry=nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085"
     env:
       - name: DOCKER_TLS_CERTDIR
         value: ""
@@ -51,7 +49,6 @@ spec:
         mountPath: /etc/docker/daemon.json
         subPath: daemon.json
 
-  // ===== VOLUMES =====
   volumes:
     - name: kubeconfig-secret
       secret:
@@ -63,7 +60,6 @@ spec:
     - name: docker-daemon-config
       configMap:
         name: docker-daemon-config
-
 '''
         }
     }
