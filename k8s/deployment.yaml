@@ -15,8 +15,7 @@ spec:
     spec:
       containers:
         - name: engo-connect
-          image: nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401075_NGO/ngo:v1
+          image: nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401075_ngo/ngo:v1
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80
-          

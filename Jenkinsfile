@@ -59,8 +59,50 @@ spec:
                 container('node') {
                     sh '''
                         echo "NGO website – static HTML/CSS site"
-                        echo "Listing project files..."
                         ls -la
+                    '''
+                }
+            }
+        }
+
+        /* -------------------------
+           DEBUG WORKSPACE
+           ------------------------- */
+        stage('Debug Workspace') {
+            steps {
+                container('node') {
+                    sh '''
+                        echo "=== WORKSPACE PATH ==="
+                        echo $WORKSPACE
+
+                        echo "=== LIST FILES ==="
+                        ls -la
+
+                        echo "=== DOCKERFILE CONTENT ==="
+                        sed -n '1,50p' Dockerfile || echo "Dockerfile not found!"
+                    '''
+                }
+            }
+        }
+
+        /* -------------------------
+           PREPARE BASE IMAGE IN NEXUS
+           ------------------------- */
+        stage('Prepare Base Image in Nexus') {
+            steps {
+                container('dind') {
+                    sh '''
+                        set -e
+                        echo "Checking base image in Nexus: 2401075_ngo/nginx:alpine"
+                        if docker pull nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401075_ngo/nginx:alpine; then
+                            echo "Base image found in Nexus."
+                        else
+                            echo "Base image missing. Uploading nginx:alpine to Nexus..."
+                            docker login nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085 -u admin -p Changeme@2025
+                            docker pull nginx:alpine
+                            docker tag nginx:alpine nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401075_ngo/nginx:alpine
+                            docker push nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401075_ngo/nginx:alpine
+                        fi
                     '''
                 }
             }
@@ -89,9 +131,9 @@ spec:
                 container('sonar-scanner') {
                     sh '''
                         sonar-scanner \
-                          -Dsonar.projectKey=2401075-NGO\
-                          -Dsonar.sources=.\
-                          -Dsonar.host.url=http://my-sonarqube-sonarqube.sonarqube.svc.cluster.local:9000\
+                          -Dsonar.projectKey=2401075-NGO \
+                          -Dsonar.sources=. \
+                          -Dsonar.host.url=http://my-sonarqube-sonarqube.sonarqube.svc.cluster.local:9000 \
                           -Dsonar.login=sqp_08597ce2ed0908d3a22170c3d5269ac22d8d7fcd
                     '''
                 }
@@ -105,9 +147,8 @@ spec:
             steps {
                 container('dind') {
                     sh '''
-                        echo "Logging in to Nexus Docker Registry..."
                         docker login nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085 \
-                          -u admin -p Changeme@2025
+                            -u admin -p Changeme@2025
                     '''
                 }
             }
@@ -120,11 +161,8 @@ spec:
             steps {
                 container('dind') {
                     sh '''
-                        echo "Tagging NGO image..."
-                        docker tag ngo:latest nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401075_NGO/ngo:v1
-
-                        echo "Pushing NGO image to Nexus..."
-                        docker push nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401075_NGO/ngo:v1
+                        docker tag ngo:latest nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401075_ngo/ngo:v1
+                        docker push nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401075_ngo/ngo:v1
                     '''
                 }
             }
@@ -137,9 +175,7 @@ spec:
             steps {
                 container('kubectl') {
                     sh '''
-                        echo "Creating namespace 2401075 if not exists..."
                         kubectl create namespace 2401075 || echo "Namespace already exists"
-                        kubectl get ns
                     '''
                 }
             }
@@ -152,15 +188,11 @@ spec:
             steps {
                 container('kubectl') {
                     sh '''
-                        echo "Applying NGO Kubernetes Deployment & Service..."
-
                         kubectl apply -f k8s/deployment.yaml -n 2401075
                         kubectl apply -f k8s/service.yaml -n 2401075
 
-                        echo "Checking all resources..."
                         kubectl get all -n 2401075
 
-                        echo "Waiting for rollout..."
                         kubectl rollout status deployment/engo-connect-deployment -n 2401075
                     '''
                 }
@@ -174,10 +206,7 @@ spec:
             steps {
                 container('kubectl') {
                     sh '''
-                        echo "[DEBUG] Listing Pods..."
                         kubectl get pods -n 2401075
-
-                        echo "[DEBUG] Describe Pods..."
                         kubectl describe pods -n 2401075 | head -n 200
                     '''
                 }
