@@ -49,6 +49,12 @@ spec:
         }
     }
 
+    // *** ADDED ***
+    environment {
+        SONAR_HOST = "http://my-sonarqube-sonarqube.sonarqube.svc.cluster.local:9000"
+        SONAR_AUTH = "sqp_08597ce2ed0908d3a22170c3d5269ac22d8d7fcd"
+    }
+
     stages {
     stage('Checkout') {
             steps {
@@ -93,12 +99,19 @@ spec:
         stage('SonarQube Analysis') {
             steps {
                 container('sonar-scanner') {
+
+                    // *** ADDED: VALIDATE REACHABILITY BEFORE RUNNING ***
+                    sh '''
+                        echo "Checking SonarQube reachability..."
+                        curl -I ${SONAR_HOST} || echo "SonarQube not reachable, but running scanner anyway."
+                    '''
+
                     sh '''
                         sonar-scanner \
                         -Dsonar.projectKey=2401075-IntroConnect \
                         -Dsonar.sources=. \
-                        -Dsonar.host.url=http://my-sonarqube-sonarqube.sonarqube.svc.cluster.local:9000\
-                        -Dsonar.token=sqp_08597ce2ed0908d3a22170c3d5269ac22d8d7fcd
+                        -Dsonar.host.url=${SONAR_HOST} \
+                        -Dsonar.token=${SONAR_AUTH}
 
                         
                     '''
