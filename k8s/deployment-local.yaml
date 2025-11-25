@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: engeo-frontend-deployment
+  namespace: "2401075"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: engeo-connect
+  template:
+    metadata:
+      labels:
+        app: engeo-connect
+    spec:
+      containers:
+        - name: engeo-connect
+          image: engo-connect-frontend:latest   # <-- LOCAL IMAGE
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
