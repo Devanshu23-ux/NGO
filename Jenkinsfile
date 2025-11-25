@@ -50,13 +50,16 @@ spec:
     }
 
     stages {
-
-        stage('Checkout') {
+    stage('Checkout') {
             steps {
                 git url:'https://github.com/Devanshu23-ux/NGO.git',branch:'main'
             }
         }
 
+
+        /* -------------------------
+           STATIC WEBSITE STEP
+           ------------------------- */
         stage('Prepare NGO Website') {
             steps {
                 container('node') {
@@ -69,6 +72,9 @@ spec:
             }
         }
 
+        /* -------------------------
+           DOCKER BUILD
+           ------------------------- */
         stage('Build Docker Image') {
             steps {
                 container('dind') {
@@ -81,32 +87,43 @@ spec:
             }
         }
 
+        /* -------------------------
+           SONARQUBE ANALYSIS
+           ------------------------- */
         stage('SonarQube Analysis') {
             steps {
                 container('sonar-scanner') {
                     sh '''
                         sonar-scanner \
-                          -Dsonar.projectKey=2401075-IntroConnect \
-                          -Dsonar.sources=. \
-                          -Dsonar.host.url=https://sonarqube.imcc.com
-                          -Dsonar.login=sqp_08597ce2ed0908d3a22170c3d5269ac22d8d7fcd
+                        -Dsonar.projectKey=2401075-IntroConnect \
+                        -Dsonar.sources=. \
+                        -Dsonar.host.url=http://my-sonarqube-sonarqube.sonarqube.svc.cluster.local:9000\
+                        -Dsonar.token=sqp_08597ce2ed0908d3a22170c3d5269ac22d8d7fcd
+
+                        
                     '''
                 }
             }
         }
 
+        /* -------------------------
+           DOCKER LOGIN TO NEXUS
+           ------------------------- */
         stage('Login to Nexus Registry') {
             steps {
                 container('dind') {
                     sh '''
                         echo "Logging in to Nexus Docker Registry..."
                         docker login nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085 \
-                          -u student -p Imcc@2025
+                          -u admin -p Changeme@2025
                     '''
                 }
             }
         }
 
+        /* -------------------------
+           PUSH IMAGE TO NEXUS
+           ------------------------- */
         stage('Push NGO Image to Nexus') {
             steps {
                 container('dind') {
@@ -121,6 +138,9 @@ spec:
             }
         }
 
+        /* -------------------------
+           CREATE NAMESPACE
+           ------------------------- */
         stage('Create Namespace') {
             steps {
                 container('kubectl') {
@@ -133,6 +153,9 @@ spec:
             }
         }
 
+        /* -------------------------
+           DEPLOY TO KUBERNETES
+           ------------------------- */
         stage('Deploy to Kubernetes') {
             steps {
                 container('kubectl') {
@@ -146,12 +169,16 @@ spec:
                         kubectl get all -n 2401075
 
                         echo "Waiting for rollout..."
-                        kubectl rollout status deployment/engo-connect-deployment -n 2401018
+                        kubectl rollout status deployment/engeo-frontend-deployment -n 2401018
+
                     '''
                 }
             }
         }
 
+        /* -------------------------
+           DEBUG
+           ------------------------- */
         stage('Debug Pods') {
             steps {
                 container('kubectl') {

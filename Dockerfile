@@ -1,10 +1,7 @@
-# Pull nginx from your Nexus Docker registry (avoids Docker Hub rate limit)
-FROM nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401075_ngo/nginx:alpine
+# Use nginx without rate-limit issues
+FROM ghcr.io/nginxinc/nginx-unprivileged:alpine
 
-# Remove default nginx static assets (optional)
-RUN rm -rf /usr/share/nginx/html/*
-
-# Copy the static site into nginx web root
+# Copy your site into nginx web root (no need to delete)
 COPY public/ /usr/share/nginx/html/
 
 # Healthcheck to ensure nginx is serving

@@ -1,12 +1,13 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: engo-connect
+  name: engeo-frontend-deployment
   namespace: "2401075"
 spec:
   selector:
-    app: engo-connect
+    app: engeo-connect
   ports:
-    - port: 80
+    - protocol: TCP
+      port: 80
       targetPort: 80
-  type: ClusterIP
+  type: LoadBalancer
