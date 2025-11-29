@@ -13,18 +13,20 @@ spec:
       labels:
         app: engeo-connect
     spec:
-      automountServiceAccountToken: false     # ✔ FIX: Disable automounting (SonarQube security issue)
+      automountServiceAccountToken: false
+      imagePullSecrets:
+        - name: regcred
       containers:
         - name: engeo-connect
           image: nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401075_ngo/ngo:v1
           imagePullPolicy: Always
           ports:
             - containerPort: 80
-          resources:                         # ✔ FIX: Add CPU, Memory, Storage requests & limits
+          resources:
             requests:
-              cpu: "100m"                    # ✔ CPU request
-              memory: "256Mi"                # ✔ Memory request
-              ephemeral-storage: "256Mi"     # ✔ Storage request
+              cpu: "100m"
+              memory: "256Mi"
+              ephemeral-storage: "256Mi"
             limits:
-              cpu: "500m"                    # ✔ CPU limit
-              memory: "512Mi"                # ✔ Memory limit
+              cpu: "500m"
+              memory: "512Mi"
