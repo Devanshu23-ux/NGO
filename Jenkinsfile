@@ -182,7 +182,7 @@ spec:
                         kubectl get all -n 2401075
 
                         echo "Waiting for rollout..."
-                        kubectl rollout status deployment/engeo-frontend-deployment -n 2401018 --timeout=120s
+                        kubectl rollout status deployment/engeo-frontend-deployment -n 2401075 --timeout=120s
  
                     '''
                 }
