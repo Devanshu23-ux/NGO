@@ -8,6 +8,7 @@ spec:
     app: engeo-connect
   ports:
     - protocol: TCP
-      port: 80
-      targetPort: 80
+      port: 80 # Internal cluster port
+      targetPort: 80 # Pod container port
+      nodePort: 31086 # Host accessible port (FREE PORT)
   type: LoadBalancer

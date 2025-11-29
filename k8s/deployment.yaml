@@ -21,10 +21,7 @@ spec:
           image: nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401075_ngo/ngo:v1
           imagePullPolicy: Always
           ports:
-            - protocol: TCP
-          port: 80 # Internal cluster port
-          targetPort: 80 # Pod container port
-          nodePort: 31086 # Host accessible port (FREE PORT)
+            - containerPort: 80
           resources:
             requests:
               cpu: "100m"
