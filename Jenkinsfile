@@ -329,7 +329,7 @@ spec:
         stage('Deploy to Kubernetes') {
             steps {
                 container('kubectl') {
-                    dir('k8s-deployment') {
+                    dir('k8s') {
                         sh '''
                             echo "Deploying NGO application to Kubernetes..."
 
