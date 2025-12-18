@@ -49,25 +49,24 @@ spec:
         }
     }
 
+    // *** ADDED ***
     environment {
         SONAR_HOST = "http://my-sonarqube-sonarqube.sonarqube.svc.cluster.local:9000"
+        SONAR_AUTH = "sqp_58c9af5218f55043dfb036706306c59ea443b889"
     }
 
     stages {
-
-        /* -------------------------
-           CHECKOUT CODE
-           ------------------------- */
-        stage('Checkout') {
+    stage('Checkout') {
             steps {
-                git url:'https://github.com/Devanshu23-ux/NGO.git', branch:'main'
+                git url:'https://github.com/Devanshu23-ux/NGO.git',branch:'main'
             }
         }
 
+
         /* -------------------------
-           STATIC WEBSITE (NO BUILD)
+           STATIC WEBSITE STEP
            ------------------------- */
-        stage('Prepare Static Files') {
+        stage('Prepare NGO Website') {
             steps {
                 container('node') {
                     sh '''
@@ -86,10 +85,8 @@ spec:
             steps {
                 container('dind') {
                     sh '''
-                        echo "Waiting for Docker daemon..."
-                        sleep 15
-
-                        echo "Building NGO Docker Image..."
+                        sleep 10
+                        echo "=== Building NGO Docker Image ==="
                         docker build -t ngo:latest .
                     '''
                 }
@@ -102,30 +99,34 @@ spec:
         stage('SonarQube Analysis') {
             steps {
                 container('sonar-scanner') {
-                    withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
-                        sh '''
-                            echo "Checking SonarQube reachability..."
-                            curl -I ${SONAR_HOST} || echo "SonarQube not reachable, but scanning anyway."
 
-                            sonar-scanner \
-                              -Dsonar.projectKey=2401075-IntroConnect \
-                              -Dsonar.sources=. \
-                              -Dsonar.host.url=${SONAR_HOST} \
-                              -Dsonar.token=$SONAR_TOKEN
-                        '''
-                    }
+                    // *** ADDED: VALIDATE REACHABILITY BEFORE RUNNING ***
+                    sh '''
+                        echo "Checking SonarQube reachability..."
+                        curl -I ${SONAR_HOST} || echo "SonarQube not reachable, but running scanner anyway."
+                    '''
+
+                    sh '''
+                        sonar-scanner \
+                        -Dsonar.projectKey=2401075- \
+                        -Dsonar.sources=. \
+                        -Dsonar.host.url=${SONAR_HOST} \
+                        -Dsonar.token=${SONAR_AUTH}
+
+                        
+                    '''
                 }
             }
         }
 
         /* -------------------------
-           LOGIN TO NEXUS
+           DOCKER LOGIN TO NEXUS
            ------------------------- */
         stage('Login to Nexus Registry') {
             steps {
                 container('dind') {
                     sh '''
-                        echo "Logging into Nexus Registry..."
+                        echo "Logging in to Nexus Docker Registry..."
                         docker login nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085 \
                           -u student -p Imcc@2025
                     '''
@@ -136,17 +137,15 @@ spec:
         /* -------------------------
            PUSH IMAGE TO NEXUS
            ------------------------- */
-        stage('Push to Nexus') {
+        stage('Push NGO Image to Nexus') {
             steps {
                 container('dind') {
                     sh '''
                         echo "Tagging NGO image..."
-                        docker tag ngo:latest \
-                          nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401075_ngo/ngo:v1
+                        docker tag ngo:latest nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401075_ngo/ngo:v1
 
                         echo "Pushing NGO image to Nexus..."
-                        docker push \
-                          nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401075_ngo/ngo:v1
+                        docker push nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401075_ngo/ngo:v1
                     '''
                 }
             }
@@ -159,8 +158,9 @@ spec:
             steps {
                 container('kubectl') {
                     sh '''
-                        echo "Ensuring namespace 2401075 exists..."
+                        echo "Creating namespace 2401075 if not exists..."
                         kubectl create namespace 2401075 || echo "Namespace already exists"
+                        kubectl get ns
                     '''
                 }
             }
@@ -173,52 +173,34 @@ spec:
             steps {
                 container('kubectl') {
                     sh '''
-                        echo "Deploying NGO application..."
+                        echo "Applying NGO Kubernetes Deployment & Service..."
 
                         kubectl apply -f k8s/deployment.yaml -n 2401075
                         kubectl apply -f k8s/service.yaml -n 2401075
 
-                        echo "Resources in namespace:"
+                        echo "Checking all resources..."
                         kubectl get all -n 2401075
 
                         echo "Waiting for rollout..."
                         kubectl rollout status deployment/engeo-frontend-deployment -n 2401075 --timeout=120s
+ 
                     '''
                 }
             }
         }
 
         /* -------------------------
-           DEBUG IMAGE PULL
+           DEBUG
            ------------------------- */
-        stage('Debug Pod Image Pull') {
+        stage('Debug Pods') {
             steps {
                 container('kubectl') {
                     sh '''
-                        echo "===== Describe NGO pod ====="
-                        kubectl describe pod -l app=ngo -n 2401075 || true
+                        echo "[DEBUG] Listing Pods..."
+                        kubectl get pods -n 2401075
 
-                        echo ""
-                        echo "===== Last events ====="
-                        kubectl get events -n 2401075 --sort-by=.lastTimestamp | tail -n 20 || true
-                    '''
-                }
-            }
-        }
-
-        /* -------------------------
-           CLUSTER INFO
-           ------------------------- */
-        stage('Show Cluster Nodes & Services') {
-            steps {
-                container('kubectl') {
-                    sh '''
-                        echo "===== Kubernetes Nodes ====="
-                        kubectl get nodes -o wide
-
-                        echo ""
-                        echo "===== Services in namespace 2401075 ====="
-                        kubectl get svc -n 2401075
+                        echo "[DEBUG] Describe Pods..."
+                        kubectl describe pods -n 2401075 | head -n 200
                     '''
                 }
             }
