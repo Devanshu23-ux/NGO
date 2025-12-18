@@ -1,3 +1,27 @@
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: engeo-frontend-deployment
+#   namespace: "2401075"
+# spec:
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: engeo-connect
+#   template:
+#     metadata:
+#       labels:
+#         app: engeo-connect
+#     spec:
+#       imagePullSecrets:
+#         - name: nexus-secret
+#       containers:
+#         - name: engeo-connect
+#           image: 127.0.0.1:30085/2401075_ngo/ngo:v1
+#           imagePullPolicy: Always
+#           ports:
+#             - containerPort: 80
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -13,20 +37,10 @@ spec:
       labels:
         app: engeo-connect
     spec:
-      automountServiceAccountToken: false
-      imagePullSecrets:
-        - name: nexus-secret
       containers:
         - name: engeo-connect
-          image: 127.0.0.1:30085/2401075_ngo/ngo:v1
+          image: host.docker.internal:30085/2401075_ngo/ngo:v1
           imagePullPolicy: Always
           ports:
             - containerPort: 80
-          resources:
-            requests:
-              cpu: "100m"
-              memory: "256Mi"
-              ephemeral-storage: "256Mi"
-            limits:
-              cpu: "500m"
-              memory: "512Mi"
+

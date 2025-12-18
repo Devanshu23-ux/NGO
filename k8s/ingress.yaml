@@ -1,10 +1,28 @@
+# apiVersion: networking.k8s.io/v1
+# kind: Ingress
+# metadata:
+#   name: engeo-frontend-ingress
+#   namespace: "2401075"
+# spec:
+#   ingressClassName: nginx
+#   rules:
+#     - host: 2401075.imcc.com
+#       http:
+#         paths:
+#           - path: /
+#             pathType: Prefix
+#             backend:
+#               service:
+#                 name: engeo-frontend-service
+#                 port:
+#                   number: 80
+
+
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: engeo-frontend-ingress
   namespace: "2401075"
-  annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
   ingressClassName: nginx
   rules:
