@@ -287,7 +287,7 @@ spec:
                     ]) {
                         sh '''
                             sonar-scanner \
-                              -Dsonar.projectKey=2401075_ngo \
+                              -Dsonar.projectKey=2401075- \
                               -Dsonar.sources=. \
                               -Dsonar.exclusions=node_modules/**,dist/** \
                               -Dsonar.host.url=${SONAR_HOST} \
