@@ -10,5 +10,5 @@ spec:
     - protocol: TCP
       port: 80 # Internal cluster port
       targetPort: 80 # Pod container port
-      nodePort: 31086 # Host accessible port (FREE PORT)
+      nodePort: 31075 # Host accessible port (FREE PORT)
   type: LoadBalancer
