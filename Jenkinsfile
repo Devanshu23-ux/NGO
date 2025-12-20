@@ -357,7 +357,6 @@ apiVersion: v1
 kind: Pod
 spec:
   containers:
-
   - name: sonar-scanner
     image: sonarsource/sonar-scanner-cli
     command: ["cat"]
@@ -402,9 +401,7 @@ spec:
     }
 
     environment {
-        SONAR_HOST = "http://my-sonarqube-sonarqube.sonarqube.svc.cluster.local:9000"
-        REGISTRY   = "nexus.imcc.com:8085"
-        IMAGE      = "2401075_ngo/ngo:v1"
+        SONAR_HOST = 'http://my-sonarqube-sonarqube.sonarqube.svc.cluster.local:9000'
     }
 
     stages {
@@ -414,7 +411,7 @@ spec:
                 container('dind') {
                     sh '''
                         echo "Building NGO Docker image..."
-                        sleep 10
+                        sleep 15
                         docker build -t ngo:latest .
                     '''
                 }
@@ -429,7 +426,7 @@ spec:
                     ]) {
                         sh '''
                             sonar-scanner \
-                              -Dsonar.projectKey=2401075_ngo \
+                              -Dsonar.projectKey=2401075- \
                               -Dsonar.sources=. \
                               -Dsonar.exclusions=node_modules/**,dist/** \
                               -Dsonar.host.url=${SONAR_HOST} \
@@ -440,23 +437,28 @@ spec:
             }
         }
 
-        stage('Login to Nexus') {
+        stage('Login to Docker Registry') {
             steps {
                 container('dind') {
                     sh '''
-                        docker login ${REGISTRY} \
-                          -u student -p Imcc@2025
+                        docker --version
+                        docker login nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085 \
+                          -u admin -p Changeme@2025
                     '''
                 }
             }
         }
 
-        stage('Tag & Push Image') {
+        stage('Build - Tag - Push') {
             steps {
                 container('dind') {
                     sh '''
-                        docker tag ngo:latest ${REGISTRY}/${IMAGE}
-                        docker push ${REGISTRY}/${IMAGE}
+                        docker tag ngo:latest \
+                          nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401075_ngo/ngo:v1
+
+                        docker push \
+                          nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401075_ngo/ngo:v1
+
                         docker image ls
                     '''
                 }
@@ -468,11 +470,10 @@ spec:
                 container('kubectl') {
                     dir('k8s') {
                         sh '''
-                            echo "Deploying NGO application..."
+                            echo "Deploying NGO application to Kubernetes..."
 
                             kubectl apply -f deployment.yaml -n 2401075
                             kubectl apply -f service.yaml -n 2401075
-                            kubectl apply -f ingress.yaml -n 2401075
 
                             kubectl rollout status deployment/engeo-frontend-deployment \
                               -n 2401075 --timeout=120s
@@ -481,5 +482,47 @@ spec:
                 }
             }
         }
+
+        stage('Verify Deployment') {
+    steps {
+        container('kubectl') {
+            sh '''
+                echo "Checking deployment rollout status..."
+                kubectl rollout status deployment/engeo-frontend-deployment -n 2401075
+            '''
+        }
+    }
+}
+
+stage('Verify Pods') {
+    steps {
+        container('kubectl') {
+            sh '''
+                kubectl get pods -n 2401075
+            '''
+        }
+    }
+}
+
+stage('Verify Services') {
+    steps {
+        container('kubectl') {
+            sh '''
+                kubectl get svc -n 2401075
+            '''
+        }
+    }
+}
+
+stage('Get Node IP') {
+    steps {
+        container('kubectl') {
+            sh 'kubectl get nodes -o wide'
+        }
+    }
+}
+
+
+
     }
 }
