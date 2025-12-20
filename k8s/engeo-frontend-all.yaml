@@ -1,0 +1,123 @@
+# -------------------------------
+# PersistentVolumeClaim (optional)
+# -------------------------------
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: engeo-frontend-pvc
+  namespace: "2401075"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+
+---
+# -------------------------------
+# Deployment
+# -------------------------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: engeo-frontend-deployment
+  namespace: "2401075"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: engeo-connect
+  template:
+    metadata:
+      labels:
+        app: engeo-connect
+    spec:
+      automountServiceAccountToken: false
+
+      imagePullSecrets:
+        - name: nexus-secret
+
+      containers:
+        - name: engeo-connect
+          image: nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401075_ngo/ngo:v1
+          imagePullPolicy: Always
+
+          ports:
+            - containerPort: 80
+
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 10
+
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 30
+            periodSeconds: 30
+
+          # Optional – use only if static content is needed
+          volumeMounts:
+            - name: static-content
+              mountPath: /usr/share/nginx/html/static
+
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+              ephemeral-storage: "1Gi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+              ephemeral-storage: "2Gi"
+
+      volumes:
+        - name: static-content
+          persistentVolumeClaim:
+            claimName: engeo-frontend-pvc
+
+---
+# -------------------------------
+# Service
+# -------------------------------
+apiVersion: v1
+kind: Service
+metadata:
+  name: engeo-frontend-service
+  namespace: "2401075"
+spec:
+  type: ClusterIP
+  selector:
+    app: engeo-connect
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+
+---
+# -------------------------------
+# Ingress
+# -------------------------------
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: engeo-frontend-ingress
+  namespace: "2401075"
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: 2401075.imcc.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: engeo-frontend-service
+                port:
+                  number: 80
